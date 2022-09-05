@@ -19,7 +19,7 @@
 
     <groupId>io.jsonwebtoken</groupId>
     <artifactId>jjwt-root</artifactId>
-    <version>0.11.5</version>
+    <version>0.11.5-blocksy2</version>
     <name>JJWT</name>
     <description>JSON Web Token support for the JVM and Android</description>
     <packaging>pom</packaging>
@@ -65,11 +65,11 @@
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <url>http://10.110.4.116:8081/repository/maven-snapshots/</url>
         </snapshotRepository>
         <repository>
             <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <url>http://10.110.4.116:8081/repository/maven-snapshots/</url>
         </repository>
     </distributionManagement>
 
@@ -156,6 +156,7 @@
 
     <dependencyManagement>
         <dependencies>
+
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>
@@ -255,13 +256,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
                     <version>2.5.3</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.maven.scm</groupId>
-                            <artifactId>maven-scm-provider-gitexe</artifactId>
-                            <version>1.9.5</version>
-                        </dependency>
-                    </dependencies>
                     <configuration>
                         <mavenExecutorId>forked-path</mavenExecutorId>
                         <releaseProfiles>ossrh</releaseProfiles>

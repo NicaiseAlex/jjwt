@@ -19,6 +19,8 @@ import io.jsonwebtoken.security.InvalidKeyException;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import io.jsonwebtoken.security.WeakKeyException;
+import net.i2p.crypto.eddsa.EdDSAKey;
+import net.i2p.crypto.eddsa.EdDSAPrivateKey;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
@@ -106,7 +108,12 @@ public enum SignatureAlgorithm {
      * Java 11 or later or a JCA provider like BouncyCastle to be in the runtime classpath.</b>  If on Java 10 or
      * earlier, BouncyCastle will be used automatically if found in the runtime classpath.
      */
-    PS512("PS512", "RSASSA-PSS using SHA-512 and MGF1 with SHA-512", "RSA", "RSASSA-PSS", false, 512, 2048);
+    PS512("PS512", "RSASSA-PSS using SHA-512 and MGF1 with SHA-512", "RSA", "RSASSA-PSS", false, 512, 2048),
+
+    /**
+     * //TODO modifier si besoin + ajouter la description
+     */
+    ED25519("ED25519", "EDDSA using using SHA-512 and Curve25519", "EdDSA", "SHA512withEDDSA", false, 512, 32);
 
     //purposefully ordered higher to lower:
     private static final List<SignatureAlgorithm> PREFERRED_HMAC_ALGS = Collections.unmodifiableList(Arrays.asList(
@@ -291,6 +298,17 @@ public enum SignatureAlgorithm {
     }
 
     /**
+     * Returns {@code true} if the enum instance represents an Edward Curve EDDSA signature algorithm, {@code false}
+     * otherwise.
+     *
+     * @return {@code true} if the enum instance represents an Edward Curve EDDSA signature algorithm, {@code false}
+     * otherwise.
+     */
+    public boolean isEdwardsCurve() {
+        return familyName.equals("EdDSA");
+    }
+
+    /**
      * Returns the minimum key length in bits (not bytes) that may be used with this algorithm according to the
      * <a href="https://tools.ietf.org/html/rfc7518">JWT JWA Specification (RFC 7518)</a>.
      *
@@ -387,6 +405,27 @@ public enum SignatureAlgorithm {
                 throw new WeakKeyException(msg);
             }
 
+        } else if (isEdwardsCurve()) {
+            if (signing) {
+                if (!(key instanceof EdDSAPrivateKey)) {
+                    String msg = familyName + " signing keys must be EdDSAPrivateKey instances.";
+                    throw new InvalidKeyException(msg);
+                }
+            }
+
+            EdDSAPrivateKey eddsaKey = (EdDSAPrivateKey) key;
+            int size = eddsaKey.getParams().getB().toByteArray().length;
+            if (size < this.minKeyLength) {
+                String msg = "The " + keyType(signing) + " key's size (EDParameterSpec order) is " + size +
+                        " bits which is not secure enough for the " + name() + " algorithm.  The JWT " +
+                        "JWA Specification (RFC 7518, Section 3.4) states that keys used with " +
+                        name() + " MUST have a size >= " + this.minKeyLength +
+                        " bits.  Consider using the " + Keys.class.getName() + " class's " +
+                        "'keyPairFor(SignatureAlgorithm." + name() + ")' method to create a key pair guaranteed " +
+                        "to be secure enough for " + name() + ".  See " +
+                        "https://tools.ietf.org/html/rfc7518#section-3.4 for more information.";
+                throw new WeakKeyException(msg);
+            }
         } else { //EC or RSA
 
             if (signing) {
@@ -556,6 +595,7 @@ public enum SignatureAlgorithm {
      *                             since that inevitably means the Key is either insufficient or explicitly disallowed by the JWT specification.
      * @since 0.10.0
      */
+    //TODO ajouter EDDSA
     public static SignatureAlgorithm forSigningKey(Key key) throws InvalidKeyException {
 
         if (key == null) {
@@ -563,9 +603,9 @@ public enum SignatureAlgorithm {
         }
 
         if (!(key instanceof SecretKey ||
-            (key instanceof PrivateKey && (key instanceof ECKey || key instanceof RSAKey)))) {
+            (key instanceof PrivateKey && (key instanceof ECKey || key instanceof RSAKey || key instanceof EdDSAKey)))) {
             String msg = "JWT standard signing algorithms require either 1) a SecretKey for HMAC-SHA algorithms or " +
-                "2) a private RSAKey for RSA algorithms or 3) a private ECKey for Elliptic Curve algorithms.  " +
+                "2) a private RSAKey for RSA algorithms or 3) a private ECKey for Elliptic Curve algorithms or 4) a private EdDSA Key for Edwards Curve Algorithms.  " +
                 "The specified key is of type " + key.getClass().getName();
             throw new InvalidKeyException(msg);
         }
@@ -609,6 +649,21 @@ public enum SignatureAlgorithm {
                 "algorithms.  The JWT specification requires RSA keys to be >= 2048 bits long.  The specified RSA " +
                 "key is " + bitLength + " bits.  See https://tools.ietf.org/html/rfc7518#section-3.3 for more " +
                 "information.";
+            throw new WeakKeyException(msg);
+        }
+
+        if(key instanceof EdDSAPrivateKey) {
+            EdDSAKey edDSAKey = (EdDSAKey) key;
+            int bitLength = edDSAKey.getParams().getB().toByteArray().length;
+            int bitLengthReq = 32;
+            if(bitLength >= bitLengthReq) {
+                ED25519.assertValidSigningKey(key);
+                return ED25519;
+            }
+            String msg = "The specified Edwards Curve signing key is not strong enough to be used with JWT EDDSA " +
+                    "signature algorithms.  The JWT specification requires EDDSA keys to be >= " + bitLengthReq + " bits long.  " +
+                    "The specified EDDSA key is " + bitLength + " bits.  See " +
+                    "https://tools.ietf.org/html/rfc7518#section-3.4 for more information.";
             throw new WeakKeyException(msg);
         }
 

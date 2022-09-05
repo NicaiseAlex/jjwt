@@ -121,7 +121,7 @@ class SignatureAlgorithmTest {
     @Test
     void testIsJdkStandard() {
         for (SignatureAlgorithm alg : SignatureAlgorithm.values()) {
-            if (alg.name().startsWith("PS") || alg == SignatureAlgorithm.NONE) {
+            if (alg.name().startsWith("PS") || alg == SignatureAlgorithm.NONE || alg.name().startsWith("ED")) {
                 assertFalse alg.isJdkStandard()
             } else {
                 assertTrue alg.isJdkStandard()
@@ -137,6 +137,8 @@ class SignatureAlgorithmTest {
             } else {
                 if (alg.isRsa()) {
                     assertEquals 2048, alg.getMinKeyLength()
+                } else if (alg.isEdwardsCurve()) {
+                    assertEquals 32, alg.getMinKeyLength()
                 } else {
                     int num = alg.name().substring(2, 5).toInteger()
                     if (alg == SignatureAlgorithm.ES512) {
@@ -182,7 +184,7 @@ class SignatureAlgorithmTest {
         } catch (InvalidKeyException expected) {
             assertTrue expected.getMessage().startsWith("JWT standard signing algorithms require either 1) a " +
                     "SecretKey for HMAC-SHA algorithms or 2) a private RSAKey for RSA algorithms or 3) a private " +
-                    "ECKey for Elliptic Curve algorithms.  The specified key is of type ")
+                    "ECKey for Elliptic Curve algorithms or 4) a private EdDSA Key for Edwards Curve Algorithms.  The specified key is of type ")
         }
     }
 

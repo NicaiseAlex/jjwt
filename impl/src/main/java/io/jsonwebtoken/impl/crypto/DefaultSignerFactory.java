@@ -45,6 +45,8 @@ public class DefaultSignerFactory implements SignerFactory {
             case ES384:
             case ES512:
                 return new EllipticCurveSigner(alg, key);
+            case ED25519:
+                return new EdwardsCurveSigner(alg, key);
             default:
                 throw new IllegalArgumentException("The '" + alg.name() + "' algorithm cannot be used for signing.");
         }

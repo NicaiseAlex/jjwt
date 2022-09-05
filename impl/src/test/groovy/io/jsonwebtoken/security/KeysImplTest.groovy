@@ -16,6 +16,8 @@
 package io.jsonwebtoken.security
 
 import io.jsonwebtoken.SignatureAlgorithm
+import net.i2p.crypto.eddsa.EdDSAPrivateKey
+import net.i2p.crypto.eddsa.EdDSAPublicKey
 import org.junit.Test
 
 import javax.crypto.SecretKey
@@ -114,6 +116,17 @@ class KeysImplTest {
                 }
                 assertEquals alg.minKeyLength, priv.params.order.bitLength()
 
+            } else if(alg.isEdwardsCurve()) {
+                KeyPair pair = Keys.keyPairFor(alg)
+                assertNotNull pair
+
+                PublicKey pub = pair.getPublic()
+                assert pub instanceof EdDSAPublicKey
+                assertEquals alg.familyName, pub.algorithm
+
+                PrivateKey priv = pair.getPrivate()
+                assert priv instanceof EdDSAPrivateKey
+                assertEquals alg.familyName, priv.algorithm
             } else {
                 try {
                     Keys.keyPairFor(alg)

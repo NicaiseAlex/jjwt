@@ -18,13 +18,22 @@ package io.jsonwebtoken.security;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.lang.Assert;
 import io.jsonwebtoken.lang.Classes;
+import io.jsonwebtoken.lang.Strings;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.KeyPair;
+//import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import net.i2p.crypto.eddsa.KeyPairGenerator;
+import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable;
+import net.i2p.crypto.eddsa.spec.EdDSAParameterSpec;
 
 /**
  * Utility class for securely generating {@link SecretKey}s and {@link KeyPair}s.
@@ -36,6 +45,9 @@ public final class Keys {
     private static final String MAC = "io.jsonwebtoken.impl.crypto.MacProvider";
     private static final String RSA = "io.jsonwebtoken.impl.crypto.RsaProvider";
     private static final String EC = "io.jsonwebtoken.impl.crypto.EllipticCurveProvider";
+
+    //TODO remplacer par une futur implémtentation de l'edwards curve
+    private static final String ED = "org.bouncycastle:bcprov-jdk15on:1.70";
 
     private static final Class[] SIG_ARG_TYPES = new Class[]{SignatureAlgorithm.class};
 
@@ -212,7 +224,7 @@ public final class Keys {
      * @return a new {@link KeyPair} suitable for use with the specified asymmetric algorithm.
      * @throws IllegalArgumentException if {@code alg} is not an asymmetric algorithm
      */
-    public static KeyPair keyPairFor(SignatureAlgorithm alg) throws IllegalArgumentException {
+    public static KeyPair keyPairFor(SignatureAlgorithm alg) throws IllegalArgumentException, NoSuchAlgorithmException {
         Assert.notNull(alg, "SignatureAlgorithm cannot be null.");
         switch (alg) {
             case RS256:
@@ -226,9 +238,27 @@ public final class Keys {
             case ES384:
             case ES512:
                 return Classes.invokeStatic(EC, "generateKeyPair", SIG_ARG_TYPES, alg);
+            case ED25519:
+                //return Classes.invokeStatic(ED, "generateKeyPair", SIG_ARG_TYPES, alg);
+                return generateKeyPairEdDSA(SignatureAlgorithm.ED25519, new SecureRandom());
             default:
                 String msg = "The " + alg.name() + " algorithm does not support Key Pairs.";
                 throw new IllegalArgumentException(msg);
+        }
+    }
+
+    //TODO a reporter dans une futur implémentation de EdDSA
+    private static KeyPair generateKeyPairEdDSA(SignatureAlgorithm alg,
+                                          SecureRandom random) {
+        Assert.notNull(alg, "SignatureAlgorithm argument cannot be null.");
+        Assert.isTrue(alg.isEdwardsCurve(), "SignatureAlgorithm argument must represent an Edwards Curve algorithm.");
+        try {
+            KeyPairGenerator g = new KeyPairGenerator();
+            EdDSAParameterSpec ED25519SPEC = EdDSANamedCurveTable.getByName("ed25519");
+            g.initialize(ED25519SPEC, random);
+            return g.generateKeyPair();
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to generate Elliptic Curve KeyPair: " + e.getMessage(), e);
         }
     }
 }

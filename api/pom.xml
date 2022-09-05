@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.jsonwebtoken</groupId>
         <artifactId>jjwt-root</artifactId>
-        <version>0.11.5</version>
+        <version>0.11.5-blocksy2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -32,6 +32,14 @@
     <properties>
         <jjwt.root>${basedir}/..</jjwt.root>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>net.i2p.crypto</groupId>
+            <artifactId>eddsa</artifactId>
+            <version>0.3.0</version>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
@@ -49,5 +57,6 @@
             </plugin>
         </plugins>
     </build>
+
 
 </project>
