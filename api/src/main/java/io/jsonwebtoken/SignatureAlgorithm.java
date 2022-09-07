@@ -113,7 +113,7 @@ public enum SignatureAlgorithm {
     /**
      * //TODO modifier si besoin + ajouter la description
      */
-    ED25519("ED25519", "EDDSA using using SHA-512 and Curve25519", "EdDSA", "SHA512withEDDSA", false, 512, 32);
+    ED25519("ED25519", "EDDSA using using SHA-512 and Curve25519", "EdDSA", "SHA512withECDSA", false, 512, 32);
 
     //purposefully ordered higher to lower:
     private static final List<SignatureAlgorithm> PREFERRED_HMAC_ALGS = Collections.unmodifiableList(Arrays.asList(
